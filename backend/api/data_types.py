@@ -14,6 +14,7 @@ class AgentEnum(str, Enum):
     Assistant = "assistant"
     UserProxy = "user_proxy"
     DeepResearch = "deep_research"  # For advanced research (LangGraph)
+    MarketResearch = "market_research"
     Error = "error"
 class Greeter(BaseModel):
     greeting: str
@@ -70,6 +71,10 @@ class SalesLeads(BaseModel):
     funding_stage: Optional[str] = Field(default=None, description="The funding stage for the sales leads")
     product: Optional[str] = Field(default=None, description="The product for the sales leads")
 
+class MarketResearch(BaseModel):
+    industry: Optional[str] = Field(default=None, description="Target industry for research")
+    product: Optional[str] = Field(default=None, description="Specific product or technology")
+
 class DeepResearch(BaseModel):
     deep_research_topic: str = Field(default="", description="The topic of the research")
 
@@ -96,7 +101,12 @@ class EndUserMessage(BaseAgentMessage):
 class AgentRequest(BaseModel):
     agent_type: AgentEnum
     parameters: Union[
-        FinancialAnalysis, SalesLeads, AssistantMessage, UserQuestion, DeepResearch
+        FinancialAnalysis,
+        SalesLeads,
+        MarketResearch,
+        AssistantMessage,
+        UserQuestion,
+        DeepResearch,
     ]
     query: str
     docs: Optional[List[str]] = None
@@ -110,6 +120,7 @@ class AgentRequest(BaseModel):
             AgentEnum.Assistant: AssistantMessage,
             AgentEnum.UserProxy: UserQuestion,
             AgentEnum.DeepResearch: DeepResearch,
+            AgentEnum.MarketResearch: MarketResearch,
         }[self.agent_type]
 
         if isinstance(self.parameters, expected_type):
@@ -127,6 +138,9 @@ class ExtendedSection(Section):
 
 class EducationalPlanResult(BaseModel):
     sections: List[ExtendedSection] = []
+
+class MarketResearchResult(BaseModel):
+    summary: str
 
 # A single citation data structure
 class DeepCitation(BaseModel):
@@ -158,6 +172,7 @@ class AgentStructuredResponse(BaseModel):
         AssistantResponse,
         UserQuestion,
         DeepResearchUserQuestion,
+        MarketResearchResult,
         DeepResearchReport,
         ErrorResponse,
     ]

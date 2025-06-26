@@ -7,6 +7,7 @@ from .data_types import (
     EndUserMessage,
     FinancialAnalysis,
     SalesLeads,
+    MarketResearch,
     UserQuestion,
     AgentEnum,  # import the extended enum with DeepResearch
     DeepResearch,
@@ -63,6 +64,11 @@ class AgentRegistry:
                 "description": "Handles sales lead generation queries, including industry, location, and product information.",
                 "examples": "Find me sales leads in the tech sector, What are the sales leads in the US?, Sales leads in the retail industry?",
             },
+            "market_research": {
+                "agent_type": "market_research",
+                "description": "Provides a basic market research summary using Exa search results.",
+                "examples": "Give me market research on AI hardware, Summarize trends for cloud security products.",
+            },
             "educational_content": {
                 "agent_type": "educational_content",
                 "description": "Handles simpler or legacy educational queries. Possibly replaced by 'deep_research' for advanced multi-step analysis.",
@@ -116,6 +122,13 @@ class AgentRegistry:
         {{
             "agent_type": "sales_leads",
             "parameters": {generate_type_string(SalesLeads)}
+        }}
+    ]
+
+    [
+        {{
+            "agent_type": "market_research",
+            "parameters": {generate_type_string(MarketResearch)}
         }}
     ]
 
