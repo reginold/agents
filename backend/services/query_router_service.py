@@ -17,7 +17,7 @@ from config.model_registry import model_registry
 from utils.logging import logger
 
 class QueryType(BaseModel):
-    # Possible types: "sales_leads", "educational_content", "financial_analysis", or "deep_research"
+    # Possible types: "sales_leads", "educational_content", "financial_analysis", "deep_research", or "market_research"
     type: str
     parameters: Dict[str, Any]
 
@@ -48,6 +48,11 @@ class QueryRouterService:
             "market research", "competitors", "industry", "geography",
             "series", "seed", "venture", "investment", "firm", "corporation",
             "business", "enterprise", "provider", "supplier", "manufacturer"
+        ]
+
+        # Market research specific keywords
+        self.market_keywords = [
+            "market research", "industry trends", "market insights", "market analysis"
         ]
 
         # Financial keywords - removing generic "analysis" to avoid over-triggering
@@ -112,6 +117,14 @@ class QueryRouterService:
                     "deep_research_topic": ""
                 }
             })
+        elif detected_type == "market_research":
+            return json.dumps({
+                "type": "market_research",
+                "parameters": {
+                    "industry": "",
+                    "product": ""
+                }
+            })
         # else, fallback => sales
         return json.dumps({
             "type": "sales_leads",
@@ -151,6 +164,13 @@ class QueryRouterService:
             "geography": params.get("geography", ""),
             "funding_stage": params.get("funding_stage", ""),
             "product": params.get("product", "")
+        }
+
+    def _normalize_market_research_params(self, params: Dict) -> Dict:
+        """Normalize market research parameters with safe defaults."""
+        return {
+            "industry": params.get("industry", ""),
+            "product": params.get("product", ""),
         }
 
     def _normalize_financial_params(self, params: Dict) -> Dict:
@@ -206,6 +226,7 @@ class QueryRouterService:
         edu_score = sum(1 for keyword in self.edu_keywords if keyword in query_lower)
         sales_score = sum(1 for keyword in self.sales_keywords if keyword in query_lower)
         fin_score = sum(1 for keyword in self.financial_keywords if keyword in query_lower)
+        market_score = sum(1 for keyword in self.market_keywords if keyword in query_lower)
 
         # 3) Special logic for the words 'analysis' or 'analyze' 
         #    => check if they appear alongside strong finance signals
@@ -219,6 +240,8 @@ class QueryRouterService:
             # If none of these appear, do NOT boost finance
 
         # 4) Decide based on highest score
+        if market_score > max(fin_score, edu_score, sales_score):
+            return "market_research"
         if fin_score > edu_score and fin_score > sales_score:
             return "financial_analysis"
         if edu_score >= sales_score:
@@ -316,7 +339,7 @@ class QueryRouterService:
         You are a query routing expert that categorizes queries and extracts structured information.
         Always return a valid JSON object with 'type' and 'parameters'.
 
-        We have four possible types: 'sales_leads', 'educational_content', 'financial_analysis', or 'deep_research'.
+        We have five possible types: 'sales_leads', 'educational_content', 'financial_analysis', 'deep_research', or 'market_research'.
 
         Rules:
         1. For 'educational_content':
@@ -461,6 +484,10 @@ class QueryRouterService:
                 )
             elif parsed_result["type"] == "deep_research":
                 parsed_result["parameters"] = self._normalize_deep_research_params(
+                    parsed_result.get("parameters", {})
+                )
+            elif parsed_result["type"] == "market_research":
+                parsed_result["parameters"] = self._normalize_market_research_params(
                     parsed_result.get("parameters", {})
                 )
             else:
@@ -976,6 +1003,10 @@ class QueryRouterServiceChat:
             )
         elif parsed_result["type"] == "deep_research":
             parsed_result["parameters"] = self._normalize_deep_research_params(
+                parsed_result.get("parameters", {})
+            )
+        elif parsed_result["type"] == "market_research":
+            parsed_result["parameters"] = self._normalize_market_research_params(
                 parsed_result.get("parameters", {})
             )
         elif parsed_result["type"] == "user_proxy":

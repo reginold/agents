@@ -28,6 +28,7 @@ from api.data_types import APIKeys
 
 # NEW IMPORT: our new DeepResearchAgent
 from api.agents.deep_research_agent import DeepResearchAgent
+from api.agents.market_research import MarketResearchAgent
 
 session_state_manager = SessionStateManager()
 
@@ -99,6 +100,12 @@ async def initialize_agent_runtime(
         agent_runtime,
         "sales_leads",
         lambda: SalesLeadsAgent(api_keys=api_keys, redis_client=redis_client),
+    )
+
+    await MarketResearchAgent.register(
+        agent_runtime,
+        "market_research",
+        lambda: MarketResearchAgent(api_keys=api_keys),
     )
 
     await AssistantAgentWrapper.register(

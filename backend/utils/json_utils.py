@@ -63,9 +63,14 @@ def extract_json_from_string(content: str, get_last: bool = True) -> Optional[Di
         matches_to_try = [matches[-1]] if get_last else [matches[0]]
         for match in matches_to_try:
             try:
-                # Clean the match by removing markdown code block syntax
                 cleaned = match.replace("```json", "").replace("```", "").strip()
-                return json.loads(cleaned)
+                obj = json.loads(cleaned)
+                # If we found a user query in the text, prefer that over the JSON value
+                user_query_match = re.search(r'user query "([^"]+)"', content, re.IGNORECASE)
+                if user_query_match and isinstance(obj, dict):
+                    if 'parameters' in obj and isinstance(obj['parameters'], dict) and 'query' in obj['parameters']:
+                        obj['parameters']['query'] = user_query_match.group(1)
+                return obj
             except json.JSONDecodeError:
                 continue
             
